@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const form = document.getElementById("cityForm");
     const weatherDiv = document.getElementById("weather");
     const dailyDiv = document.getElementById("daily");
+    const hourlyDiv = document.getElementById("hourly");
 
     form.addEventListener("submit", function(event) {
         event.preventDefault();
@@ -19,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (data && data.length > 0) {
                     const locationKey = data[0].Key;
                     fetchWeatherData(locationKey);
+                    fetchHourlyForecast(locationKey); // Fetch hourly forecast
                     fetch5DayForecast(locationKey);   // Fetch 5-day forecast
                 } else {
                     weatherDiv.innerHTML = `<p>City not found.</p>`;
@@ -48,6 +50,23 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     }
 
+    function fetchHourlyForecast(locationKey) {
+        const hourlyForecastUrl = `http://dataservice.accuweather.com/forecasts/v1/hourly/12hour/${locationKey}?apikey=${apiKey}&metric=true`;
+
+        fetch(hourlyForecastUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    displayHourlyForecast(data);
+                } else {
+                    hourlyDiv.innerHTML += `<p>No hourly forecast available.</p>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching hourly forecast:", error);
+                hourlyDiv.innerHTML += `<p>Error fetching hourly forecast data.</p>`;
+            });
+    }
 
     function fetch5DayForecast(locationKey) {
         const dailyForecastUrl = `http://dataservice.accuweather.com/forecasts/v1/daily/5day/${locationKey}?apikey=${apiKey}&metric=true`;
@@ -78,7 +97,17 @@ document.addEventListener("DOMContentLoaded", function() {
         weatherDiv.innerHTML = weatherContent;
     }
 
-
+    function displayHourlyForecast(data) {
+        let forecastContent = `<h2>Hourly Forecast</h2>`;
+        data.forEach(hourData => {
+            const time = new Date(hourData.DateTime).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+            const temperature = hourData.Temperature.Value;
+            forecastContent += `
+                <p>${time}: ${temperature}°C</p>
+            `;
+        });
+        hourlyDiv.innerHTML += forecastContent;
+    }
 
     function display5DayForecast(forecasts) {
         let forecastContent = `<h2>5-Day Forecast</h2>`;
